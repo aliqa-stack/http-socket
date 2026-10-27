@@ -4,8 +4,9 @@
 #include<unistd.h>
 #include<netinet/in.h>
 #include <string>
+#include <cstring>
 
-//soon will be added code for windows
+//soon will be added code 
 #if defined(WIN32)
     #include <winsock.h>
     #include <stdlib.h>
@@ -17,6 +18,9 @@ namespace http{
         public:
             TcpServer(std::string ip_adress, int port);
             ~TcpServer();
+            void ConnectSCT();
+            void AcceptMSG();
+            char SendMSG();
         private:
             std::string m_ipadress;
             int m_port;
@@ -28,11 +32,7 @@ namespace http{
             unsigned int socketAddress_len;
             std::string m_serverMSG;
 
-            int Startserver();
-            void ConnectSCT();
-            void SendMSG();
-            void AcceptMSG();
-            void SendMSG();
+             int Startserver();
             void CloseServer();
 
     };

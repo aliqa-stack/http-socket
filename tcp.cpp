@@ -57,7 +57,7 @@ namespace http{
     }
 
     void TcpServer::AcceptMSG(){
-        int client = accept(m_socket, (sockadrr *)&socketAdress, &socketAddres_len);
+        int client = accept(m_socket, nullptr, &socketAddress_len);
         if(client < 0){
             ExitWithError("cannot accept client");
         }
@@ -72,12 +72,22 @@ namespace http{
 
     }
 
-    void TcpServer::SendMSG(){
-        int clientSide = connect(m_socket, (struct sockaddr*)&socketAddres, socketAddress_len);
+    char TcpServer::SendMSG(){
+        socketAddress.sin_family = AF_INET;
+        socketAddress.sin_port = htons(m_port);
+        socketAddress.sin_addr.s_addr = INADDR_ANY;
+        int clientSide = connect(m_socket, (struct sockaddr*)&socketAddress, socketAddress_len);
         if(clientSide < 0){
             ExitWithError("cannot connect to server");
         }
+        char message[1024] = "hello from the client side";
+        ssize_t packet = send(m_socket, message, strlen(message), MSG_NOSIGNAL);
+        if(packet < 0){
+            ExitWithError("failed sending a message");
+        }
+        close(m_socket);
 
+        return *message;
     }
 
     void TcpServer::CloseServer(){
@@ -91,6 +101,9 @@ namespace http{
 int main(){
     using namespace http; 
     TcpServer server = TcpServer("0.0.0.0", 8080);
+    server.ConnectSCT();
+    server.SendMSG();
+
     
 
 
