@@ -16,14 +16,14 @@ namespace{
 
 namespace http{
     TcpServer::TcpServer(std::string ip_adress, int port)
-        :m_ipadress(ip_adress),m_port(port),m_socket(),m_new_socket(),m_incomingmessage(),
+        :m_ipadress(ip_adress),m_port(port),m_socket(Startserver()),m_new_socket(),
         socketAddress(),socketAddress_len(sizeof(socketAddress)),m_serverMSG()
     {
         Startserver();
 
     }
     TcpServer::~TcpServer(){
-        CloseServer();
+        CloseServer(); 
     }
 
     int TcpServer::Startserver(){
@@ -38,7 +38,7 @@ namespace http{
     void TcpServer::ConnectSCT(){
         socketAddress.sin_family = AF_INET;
         socketAddress.sin_port = htons(m_port);
-        socketAddress.sin_addr.s_addr = INADDR_ANY;
+        socketAddress.sin_addr.s_addr = inet_addr(m_ipadress.c_str());
         if(bind(m_socket, (struct sockaddr*)&socketAddress, sizeof(socketAddress)) < 0){
             ExitWithError("cannot bind the socket");
             CloseServer();
@@ -57,7 +57,7 @@ namespace http{
     }
 
     void TcpServer::AcceptMSG(){
-        int client = accept(m_socket, nullptr, &socketAddress_len);
+        int client = accept(m_socket, nullptr, nullptr);
         if(client < 0){
             ExitWithError("cannot accept client");
         }
@@ -72,22 +72,27 @@ namespace http{
 
     }
 
-    char TcpServer::SendMSG(){
+    void TcpServer::address_Storage(){
         socketAddress.sin_family = AF_INET;
         socketAddress.sin_port = htons(m_port);
-        socketAddress.sin_addr.s_addr = INADDR_ANY;
-        int clientSide = connect(m_socket, (struct sockaddr*)&socketAddress, socketAddress_len);
+        socketAddress.sin_addr.s_addr = inet_addr(m_ipadress.c_str());
+    
+    }
+
+    void TcpServer::SendMSG(const std::string& message){
+        int clientConnect = socket(AF_INET, SOCK_STREAM, 0);
+
+       int clientSide = connect(clientConnect, (struct sockaddr*)&socketAddress, socketAddress_len);
         if(clientSide < 0){
+            close(clientConnect);
             ExitWithError("cannot connect to server");
         }
-        char message[1024] = "hello from the client side";
-        ssize_t packet = send(m_socket, message, strlen(message), MSG_NOSIGNAL);
+        ssize_t packet = send(clientConnect, message.c_str(), strlen(message.c_str()), MSG_NOSIGNAL);
         if(packet < 0){
             ExitWithError("failed sending a message");
+            close(m_socket);
         }
-        close(m_socket);
 
-        return *message;
     }
 
     void TcpServer::CloseServer(){
@@ -102,7 +107,10 @@ int main(){
     using namespace http; 
     TcpServer server = TcpServer("0.0.0.0", 8080);
     server.ConnectSCT();
-    server.SendMSG();
+    server.SendMSG("halo dari backend cpp");
+    server.AcceptMSG();
+
+
 
     
 
